@@ -1,0 +1,31 @@
+﻿version: "3.8"
+services:
+  backend:
+    build: ./BackEnd
+    container_name: backend
+    environment:
+      # QUAN TRỌNG NHẤT: Trỏ database về IP của máy ảo VMware thông qua đường hầm VPN
+      SPRING_DATASOURCE_URL: jdbc:mysql://10.8.0.2:3306/doanyte?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123
+      DOCKER_ENV: "true"
+    ports:
+      - "8080:8080"
+    volumes:
+      - backend_static:/app/static
+    restart: unless-stopped
+
+  frontend:
+    container_name: frontend
+    build:
+      context: ./FrontEnd
+      args:
+        # QUAN TRỌNG: Sửa thành IP Public của máy ảo Azure (thêm http://)
+        REACT_APP_API_URL: http://[IP_ADDRESS]
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  backend_static:
