@@ -1,17 +1,14 @@
-# Dockerfile (FrontEnd)
-FROM node:22-alpine AS build
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-# Remove any existing .env files to prevent conflicts
-RUN rm -f .env .env.local .env.development .env.production
-ARG REACT_APP_API_URL
-ENV REACT_APP_API_URL=$REACT_APP_API_URL
-RUN npm run build
-
+# Dockerfile siêu nhẹ cho Frontend
 FROM nginx:alpine
-COPY --from=build /app/build /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Xóa file cấu hình Nginx mặc định của Docker
+RUN rm /etc/nginx/conf.d/default.conf
+
+# Copy file nginx.conf của bạn vào
+COPY nginx.conf /etc/nginx/conf.d/
+
+# Copy thư mục build đã làm sẵn ở nhà vào thư mục web của Nginx
+COPY build /usr/share/nginx/html
+
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

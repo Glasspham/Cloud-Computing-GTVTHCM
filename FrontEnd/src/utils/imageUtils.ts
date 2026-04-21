@@ -2,9 +2,24 @@
  * Utility functions for handling images and media
  */
 
+// Đã thêm /files/ vào trước các ảnh mặc định (giả định các ảnh này cũng nằm ở Backend)
 const DEFAULT_IMAGE_URL = `${process.env.REACT_APP_API_URL}/files/default_no_image.png`;
 const DEFAULT_VIDEO_URL = `${process.env.REACT_APP_API_URL}/files/default_no_video.png`;
 const DEFAULT_AVATAR_URL = `${process.env.REACT_APP_API_URL}/files/defaultUser.png`;
+
+/**
+ * Hàm hỗ trợ an toàn: Tự động chèn /files/ và dọn dẹp dấu / thừa
+ */
+const formatMediaRoute = (path: string): string => {
+  // Cắt bỏ dấu '/' ở đầu nếu có (tránh lỗi /files//avatar.jpg)
+  const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+
+  // Nếu path đã có chữ files/ rồi thì thôi, nếu chưa có thì thêm vào
+  if (cleanPath.startsWith('files/')) {
+    return cleanPath;
+  }
+  return `files/${cleanPath}`;
+};
 
 /**
  * Get image URL with fallback to default image
@@ -20,7 +35,8 @@ export const getImageUrl = (imagePath?: string): string => {
     return imagePath;
   }
 
-  return `${process.env.REACT_APP_API_URL}/files/${imagePath}`;
+  // Đã áp dụng hàm formatMediaRoute
+  return `${process.env.REACT_APP_API_URL}/${formatMediaRoute(imagePath)}`;
 };
 
 /**
@@ -35,7 +51,9 @@ export const getAvatarUrl = (avatar?: string): string => {
   if (avatar.startsWith("http")) {
     return avatar;
   }
-  return `${process.env.REACT_APP_API_URL}/files/${avatar}`;
+
+  // Đã áp dụng hàm formatMediaRoute
+  return `${process.env.REACT_APP_API_URL}/${formatMediaRoute(avatar)}`;
 };
 
 /**
@@ -43,7 +61,6 @@ export const getAvatarUrl = (avatar?: string): string => {
  * @param videoPath - The video path from API
  * @returns Full video URL with fallback
  */
-
 export const getVideoUrl = (videoPath?: string): string => {
   if (!videoPath) {
     return DEFAULT_VIDEO_URL;
@@ -51,7 +68,9 @@ export const getVideoUrl = (videoPath?: string): string => {
   if (videoPath.startsWith("http")) {
     return videoPath;
   }
-  return `${process.env.REACT_APP_API_URL}/files/${videoPath}`;
+
+  // Đã áp dụng hàm formatMediaRoute
+  return `${process.env.REACT_APP_API_URL}/${formatMediaRoute(videoPath)}`;
 }
 
 /**

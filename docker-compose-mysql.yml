@@ -4,7 +4,7 @@ services:
     image: mysql:8.0.40-debian
     container_name: mysql
     environment:
-      MYSQL_ROOT_PASSWORD: 123
+      MYSQL_ROOT_PASSWORD: 1
       MYSQL_DATABASE: doanyte
     ports:
       - "10.8.0.2:3306:3306"

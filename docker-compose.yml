@@ -21,7 +21,7 @@ services:
       context: ./FrontEnd
       args:
         # QUAN TRỌNG: Sửa thành IP Public của máy ảo Azure (thêm http://)
-        REACT_APP_API_URL: http://[IP_ADDRESS]
+        REACT_APP_API_URL: http://20.235.122.97
     ports:
       - "80:80"
     depends_on:
