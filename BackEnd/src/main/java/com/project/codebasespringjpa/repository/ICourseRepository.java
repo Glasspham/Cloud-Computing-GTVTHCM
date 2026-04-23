@@ -3,13 +3,20 @@ package com.project.codebasespringjpa.repository;
 import com.project.codebasespringjpa.entity.CourseEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface ICourseRepository extends JpaRepository<CourseEntity, Long> {
+    @Override
+    @EntityGraph(attributePaths = { "objects", "courseDetail" })
+    Optional<CourseEntity> findById(Long id);
+
     @Query("""
             select cs from CourseEntity cs where cs.isDelete = false
                 and (:keyword is null or cs.name like concat('%', :keyword, '%'))

@@ -3,6 +3,7 @@ package com.project.codebasespringjpa.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.BatchSize;
 import java.util.List;
 
 @Data
@@ -30,6 +31,7 @@ public class UserEntity extends BaseEntity {
     String phone;
 
     @ManyToMany
+    @BatchSize(size = 32)
     @JoinTable(name = "tbl_user_major", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "major_id"))
     List<MajorEntity> majors;
 
@@ -38,10 +40,12 @@ public class UserEntity extends BaseEntity {
     RoleEntity role;
 
     @ManyToMany
+    @BatchSize(size = 32)
     @JoinTable(name = "tbl_user_program", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "program_id"))
     List<ProgramEntity> programs;
 
     @OneToMany(mappedBy = "user")
+    @BatchSize(size = 32)
     List<SurveyResultEntity> surveyResult;
 
     public UserEntity(String email, String phone, String username, String fullname, String password, String avatar,

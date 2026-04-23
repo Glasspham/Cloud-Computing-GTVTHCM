@@ -3,6 +3,7 @@ package com.project.codebasespringjpa.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.BatchSize;
 import java.util.List;
 
 @Data
@@ -21,8 +22,10 @@ public class SurveyEntity extends BaseEntity{
     String type;
 
     @OneToMany(mappedBy = "survey", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 32)
     List<QuestionEntity> questions;
 
     @OneToMany(mappedBy = "survey")
+    @BatchSize(size = 32)
     List<SurveyResultEntity> surveyResult;
 }

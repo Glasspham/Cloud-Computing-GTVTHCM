@@ -9,6 +9,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import java.util.Collections;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,11 +21,13 @@ public class QuestionMapper {
     AnswerMapper answerMapper;
 
     public QuestionResponse toResponse(QuestionEntity entity){
+        if (entity == null) {
+            return null;
+        }
         List<AnswerResponse>answerResponses = new ArrayList<>();
-        if (entity != null && entity.getAnswers() != null){
-            for (AnswerEntity answer: entity.getAnswers()){
-                answerResponses.add(answerMapper.toResponse(answer));
-            }
+        List<AnswerEntity> answers = entity.getAnswers() != null ? entity.getAnswers() : Collections.emptyList();
+        for (AnswerEntity answer: answers){
+            answerResponses.add(answerMapper.toResponse(answer));
         }
         return QuestionResponse.builder()
                 .id(entity.getId())

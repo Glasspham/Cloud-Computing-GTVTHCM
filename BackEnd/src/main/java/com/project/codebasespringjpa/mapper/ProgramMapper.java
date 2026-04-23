@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import java.time.LocalTime;
+import java.util.Collections;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,12 +42,14 @@ public class ProgramMapper {
     }
 
     public ProgramResponse toResponse(ProgramEntity entity) {
+        if (entity == null) {
+            return null;
+        }
         List<UserResponse> userResponses = new ArrayList<>();
-        if (entity != null && entity.getUsers() != null) {
-            for (UserEntity user : entity.getUsers()) {
-                if (user.getIsDelete() == false) {
-                    userResponses.add(userMapper.toResponse(user));
-                }
+        List<UserEntity> users = entity.getUsers() != null ? entity.getUsers() : Collections.emptyList();
+        for (UserEntity user : users) {
+            if (user.getIsDelete() == false) {
+                userResponses.add(userMapper.toResponse(user));
             }
         }
         return ProgramResponse.builder()

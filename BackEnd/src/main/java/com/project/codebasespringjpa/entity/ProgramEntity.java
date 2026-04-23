@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -30,5 +31,6 @@ public class ProgramEntity extends BaseEntity {
     String description;
 
     @ManyToMany(mappedBy = "programs")
+    @BatchSize(size = 32)
     List<UserEntity> users;
 }

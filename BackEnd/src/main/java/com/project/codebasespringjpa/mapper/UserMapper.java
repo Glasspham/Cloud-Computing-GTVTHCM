@@ -14,6 +14,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import java.util.Collections;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,10 +33,9 @@ public class UserMapper {
     public UserEntity toEntity(UserRequest request) {
         List<MajorEntity> majorList = new ArrayList<>();
         if (request != null && request.getMajors() != null) {
-            for (String it : request.getMajors()) {
-                MajorEntity major = majorRepository.findByName(it);
-                if (major != null)
-                    majorList.add(major);
+            List<MajorEntity> majors = majorRepository.findByNameIn(request.getMajors());
+            if (majors != null) {
+                majorList.addAll(majors);
             }
         }
         RoleEntity role = roleRepository.findByName(request.getRole()).orElseThrow(
@@ -54,9 +54,13 @@ public class UserMapper {
     }
 
     public UserResponse toResponse(UserEntity entity) {
+        if (entity == null) {
+            return null;
+        }
         List<String> majorList = new ArrayList<>();
         try {
-            for (var it : entity.getMajors())
+            List<MajorEntity> majors = entity.getMajors() != null ? entity.getMajors() : Collections.emptyList();
+            for (var it : majors)
                 majorList.add(it.getName());
         } catch (Exception e) {}
         return UserResponse.builder()
@@ -68,7 +72,7 @@ public class UserMapper {
                 .position(entity.getPosition())
                 .phone(entity.getPhone())
                 .majors(majorList)
-                .role(entity.getRole().getName())
+                .role(entity.getRole() != null ? entity.getRole().getName() : null)
                 .createDate(entity.getCreateDate())
                 .build();
     }

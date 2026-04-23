@@ -3,6 +3,7 @@ package com.project.codebasespringjpa.repository;
 import com.project.codebasespringjpa.entity.UserEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,8 +13,14 @@ import java.util.List;
 
 @Repository
 public interface IUserRepository extends JpaRepository<UserEntity, Long> {
+    @EntityGraph(attributePaths = { "role", "majors" })
     Optional<UserEntity> findByUsername(String username);
 
+    @Override
+    @EntityGraph(attributePaths = { "role", "majors" })
+    Optional<UserEntity> findById(Long id);
+
+    @EntityGraph(attributePaths = { "role", "majors" })
     @Query("""
             select us from UserEntity us where us.isDelete = false
                 and (:keyword is null or us.username like concat('%', :keyword, '%') or us.fullname like concat('%', :keyword, '%'))
@@ -26,12 +33,14 @@ public interface IUserRepository extends JpaRepository<UserEntity, Long> {
             @Param("major") String major,
             Pageable pageable);
 
+    @EntityGraph(attributePaths = { "role", "majors" })
     @Query("""
                 select us from UserEntity us where us.isDelete = false
                 and us.role.name = 'SPECIALIST'
             """)
     List<UserEntity> findAllSpecialiest();
 
+    @EntityGraph(attributePaths = { "role", "majors" })
     @Query("""
                 select us from UserEntity us where us.isDelete = false
                 and us.role.name = 'USER'

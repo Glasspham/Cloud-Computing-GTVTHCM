@@ -463,7 +463,7 @@ Bạn tìm đoạn `server { ... }` hiện tại, xóa nội dung bên trong và
 ```nginx
 server {
     listen 80;
-    server_name 20.235.122.97;
+    server_name _;
     root /usr/share/nginx/html;
     index index.html;
 
@@ -473,7 +473,7 @@ server {
     client_max_body_size 50M;
 
     # [CẬP NHẬT] Chỉ để những API thật sự tồn tại trong code của bạn.
-    location ~ ^/(appointments|auth|courses|programs|survey|users|statistics|files|swagger-ui)/ {
+    location ~ ^/(appointments|auth|courses|programs|survey|users|statistics|files|swagger-ui)(/|$) {
         proxy_pass http://backend:8080;
 
         proxy_set_header Host $host;

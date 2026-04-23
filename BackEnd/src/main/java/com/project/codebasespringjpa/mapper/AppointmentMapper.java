@@ -2,10 +2,11 @@ package com.project.codebasespringjpa.mapper;
 
 import com.project.codebasespringjpa.dto.appointment.request.AppointmentRequest;
 import com.project.codebasespringjpa.dto.appointment.response.AppointmentResponse;
-import com.project.codebasespringjpa.dto.user.response.UserResponse;
 import com.project.codebasespringjpa.entity.AppointmentEntity;
+import com.project.codebasespringjpa.entity.UserEntity;
+import com.project.codebasespringjpa.exception.AppException;
+import com.project.codebasespringjpa.exception.ErrorCode;
 import com.project.codebasespringjpa.repository.IUserRepository;
-import com.project.codebasespringjpa.service.interfaces.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -13,16 +14,16 @@ import org.springframework.stereotype.Component;
 public class AppointmentMapper {
     @Autowired
     IUserRepository userRepository;
-    @Autowired
-    IUserService userService;
 
     public AppointmentEntity toEntity(AppointmentRequest request) {
-        UserResponse userResponse = userService.findByUsername(request.getUsername());
-        UserResponse specialResponse = userService.findByUsername(request.getSpecialistName());
+        UserEntity userEntity = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        UserEntity specialEntity = userRepository.findByUsername(request.getSpecialistName())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         return AppointmentEntity.builder()
-                .userId(userResponse.getId())
+                .userId(userEntity.getId())
                 .username(request.getUsername())
-                .specialistId(specialResponse.getId())
+                .specialistId(specialEntity.getId())
                 .specialistName(request.getSpecialistName())
                 .date(request.getDate())
                 .hours(request.getHours())
@@ -32,16 +33,17 @@ public class AppointmentMapper {
     }
 
     public AppointmentResponse toResponse(AppointmentEntity entity) {
-        UserResponse userAcc = userService.findByUsername(entity.getUsername());
-        UserResponse specialAcc = userService.findByUsername(entity.getSpecialistName());
+        if (entity == null) {
+            return null;
+        }
         return AppointmentResponse.builder()
                 .id(entity.getId())
                 .userId(entity.getUserId())
                 .userName(entity.getUsername())
-                .userFullName(userAcc.getFullname())
+                .userFullName(entity.getUserFullName())
                 .specialistId(entity.getSpecialistId())
                 .specialistName(entity.getSpecialistName())
-                .specialistFullname(specialAcc.getFullname())
+                .specialistFullname(entity.getSpecialistFullName())
                 .date(entity.getDate())
                 .hours(entity.getHours())
                 .duration(entity.getDuration())

@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Formula;
 
 import java.util.List;
@@ -28,9 +29,11 @@ public class CourseEntity extends BaseEntity {
     Double duration;
 
     @ManyToMany
+    @BatchSize(size = 32)
     @JoinTable(name = "tbl_course_object", joinColumns = @JoinColumn(name = "course_id"), inverseJoinColumns = @JoinColumn(name = "object_id"))
     List<ObjectEntity> objects;
 
     @OneToMany(mappedBy = "course")
+    @BatchSize(size = 32)
     List<CourseDetailEntity> courseDetail;
 }

@@ -10,6 +10,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import java.util.Collections;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,11 +22,13 @@ public class SurveyMapper {
     QuestionMapper questionMapper;
 
     public SurveyResponse toResponse(SurveyEntity entity) {
+        if (entity == null) {
+            return null;
+        }
         List<QuestionResponse> questionResponses = new ArrayList<>();
-        if (entity != null && entity.getQuestions() != null) {
-            for (QuestionEntity question : entity.getQuestions()) {
-                questionResponses.add(questionMapper.toResponse(question));
-            }
+        List<QuestionEntity> questions = entity.getQuestions() != null ? entity.getQuestions() : Collections.emptyList();
+        for (QuestionEntity question : questions) {
+            questionResponses.add(questionMapper.toResponse(question));
         }
         return SurveyResponse.builder()
                 .id(entity.getId())

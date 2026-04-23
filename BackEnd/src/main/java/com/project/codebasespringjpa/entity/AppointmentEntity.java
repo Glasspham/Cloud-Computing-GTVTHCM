@@ -32,6 +32,12 @@ public class AppointmentEntity extends BaseEntity {
     @Column(name = "specialist_name")
     String specialistName;
 
+    @Formula("(SELECT u.fullname FROM tbl_user u WHERE u.id = user_id)")
+    String userFullName;
+
+    @Formula("(SELECT u.fullname FROM tbl_user u WHERE u.id = specialist_id)")
+    String specialistFullName;
+
     LocalDate date;
     LocalTime hours;
     Double duration;

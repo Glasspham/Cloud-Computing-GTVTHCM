@@ -14,6 +14,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import java.util.Collections;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,10 +30,10 @@ public class CourseMapper {
     public CourseEntity toEntity(CourseRequest request) {
         List<ObjectEntity> objectEntities = new ArrayList<>();
         try {
-            for (var it : request.getObjects()) {
-                ObjectEntity object = objectRepository.findByName(it);
-                if (object != null) {
-                    objectEntities.add(object);
+            if (request != null && request.getObjects() != null) {
+                List<ObjectEntity> objects = objectRepository.findByNameIn(request.getObjects());
+                if (objects != null) {
+                    objectEntities.addAll(objects);
                 }
             }
         } catch (Exception e) {
@@ -47,20 +48,21 @@ public class CourseMapper {
     }
 
     public CourseResponse toResponse(CourseEntity entity) {
+        if (entity == null) {
+            return null;
+        }
         List<String> objects = new ArrayList<>();
-        List<String> sallybus = new ArrayList<>();
         List<CourseDetailResponse> courseDetailResponses = new ArrayList<>();
-        if (entity != null && entity.getObjects() != null) {
-            for (ObjectEntity object : entity.getObjects()) {
+        List<ObjectEntity> objectEntities = entity.getObjects() != null ? entity.getObjects() : Collections.emptyList();
+        for (ObjectEntity object : objectEntities) {
+            if (object != null) {
                 objects.add(object.getName());
             }
         }
-        if (entity != null && entity.getCourseDetail() != null) {
-            for (CourseDetailEntity courseDetail : entity.getCourseDetail()) {
-                if (courseDetail.getIsDelete() == false) {
-                    courseDetailResponses.add(courseDetailMapper.toResponse(courseDetail));
-                    sallybus.add(courseDetail.getName());
-                }
+        List<CourseDetailEntity> details = entity.getCourseDetail() != null ? entity.getCourseDetail() : Collections.emptyList();
+        for (CourseDetailEntity courseDetail : details) {
+            if (courseDetail.getIsDelete() == false) {
+                courseDetailResponses.add(courseDetailMapper.toResponse(courseDetail));
             }
         }
         String imageTmp = UtilConst.NO_IMAGE_DEFAULT;
