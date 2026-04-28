@@ -625,8 +625,7 @@ docker run --rm -v "%cd%":/app -w /app maven:3.9.9-eclipse-temurin-17 mvn clean 
 #### Bước 2: Đẩy lên và chạy trong 10 giây
 Bây giờ, bạn chỉ cần dùng lệnh `scp` đẩy lại thư mục `FrontEnd` lên Azure và chạy lệnh `docker compose up -d --build`. Nó sẽ tốn chưa tới 1 phút và chỉ tốn khoảng 20MB RAM để chạy cái giao diện của bạn!
 
-1. Đưa đúng các file cần thiết:
-
+**Terminal(Ubuntu/Ubuntu Server)**
 ```bash
 rsync -avzR -e "ssh -o StrictHostKeyChecking=no" \
   ./FrontEnd/build \
@@ -638,10 +637,23 @@ rsync -avzR -e "ssh -o StrictHostKeyChecking=no" \
   glass@20.235.122.97:~/BTL/
 ```
 
-2. Chỉ đưa đúng 2 folder build và target và `docker-compose.yml` lên
+**PowerShell**
 
+*Cách 1: Phải tạo sẵn folder trong azure*
 ```bash
-scp -r ~/document/JAVA-010112213601/FrontEnd/build ~/document/JAVA-010112213601/BackEnd/target ~/document/JAVA-010112213601/docker-compose.yml glass@20.235.122.97:~/BTL/
+ssh -o StrictHostKeyChecking=no glass@20.235.122.97 "mkdir -p ~/BTL ~/BTL/BackEnd ~/BTL/BackEnd/target ~/BTL/FrontEnd"
+scp -r ./FrontEnd/build ./FrontEnd/nginx.conf ./FrontEnd/Dockerfile glass@20.235.122.97:~/BTL/FrontEnd
+scp -r ./BackEnd/target/*.jar glass@20.235.122.97:~/BTL/BackEnd/target
+scp -r ./BackEnd/Dockerfile glass@20.235.122.97:~/BTL/BackEnd
+scp -r ./docker-compose.yml glass@20.235.122.97:~/BTL
+```
+
+*Cách 2: Nén thành file .tar.gz (khuyên dùng)*
+```bash
+tar -czvf BTL.tar.gz FrontEnd/build FrontEnd/nginx.conf FrontEnd/Dockerfile BackEnd/target/*.jar BackEnd/Dockerfile docker-compose.yml
+scp BTL.tar.gz glass@20.235.122.97:~/
+ssh glass@20.235.122.97 "mkdir -p ~/BTL && tar -xzvf BTL.tar.gz -C ~/BTL"
+Remove-Item -Path .\BTL.tar.gz
 ```
 
 ### Lỗi không thể kết nối Database MySQL từ Azure về máy VMware thường sẽ có dạng như thế này:
