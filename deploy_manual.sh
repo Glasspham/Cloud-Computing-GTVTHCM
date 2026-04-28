@@ -1,20 +1,16 @@
 #!/bin/bash
-# Bash Script - Deploy Hybrid Cloud System
-# Purpose: Manage Cloud Private (VMware) + Build & Deploy to Cloud Public (Azure)
+# Bash Script - Deploy from Private Cloud (Local) to Public Cloud (Azure) - MANUAL PASSWORD
+# Purpose: Control Node is Local VMware. Prompts for password when connecting to Azure.
 # Author: Glass
 
-# Default values
 AZURE_USER="glass"
-PRIVATE_USER="glass"
 SKIP_BUILD=false
 
-# Parse command line arguments
+# Parse command line arguments (Đã bỏ Private IP/User)
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --azure-ip) AZURE_IP="$2"; shift ;;
-        --private-ip) PRIVATE_IP="$2"; shift ;;
         --azure-user) AZURE_USER="$2"; shift ;;
-        --private-user) PRIVATE_USER="$2"; shift ;;
         --skip-build) SKIP_BUILD=true ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
@@ -22,9 +18,9 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Check required parameters
-if [ -z "$AZURE_IP" ] || [ -z "$PRIVATE_IP" ]; then
-    echo -e "\033[0;31m✗ Lỗi: Thiếu tham số bắt buộc. Vui lòng cung cấp --azure-ip và --private-ip\033[0m"
-    echo "Sử dụng: ./deploy_manual.sh --azure-ip <IP> --private-ip <IP> [--skip-build]"
+if [ -z "$AZURE_IP" ]; then
+    echo -e "\033[0;31m❌ Lỗi: Thiếu tham số bắt buộc. Vui lòng cung cấp --azure-ip\033[0m"
+    echo "Sử dụng: ./deploy_manual_from_local.sh --azure-ip <IP> [--azure-user <USER>] [--skip-build]"
     exit 1
 fi
 
@@ -46,34 +42,27 @@ FRONTEND_DIR="$ROOT_DIR/FrontEnd"
 BACKEND_DIR="$ROOT_DIR/BackEnd"
 
 write_info "==========================================="
-write_info "☁️  Hybrid Cloud Deployment Script (Manual)"
+write_info "☁️  Hybrid Cloud Deployment (Manual - Local Node)"
 write_info "==========================================="
-write_info "🔒 Cloud Private (VMware): $PRIVATE_IP (User: $PRIVATE_USER)"
-write_info "☁️  Cloud Public (Azure):   $AZURE_IP (User: $AZURE_USER)"
+write_info "🔒 Cloud Private: Localhost (VMware)"
+write_info "☁️  Cloud Public:  $AZURE_IP (User: $AZURE_USER)"
 write_info "📁 Root Directory: $ROOT_DIR"
 write_info "=========================================="
 echo ""
 
-# ========== STEP 0: CHECK & START CLOUD PRIVATE (VMware) ==========
-write_info "🔒 STEP 0: Checking & Starting Database (Cloud Private)..."
-write_info "Connecting to Cloud Private at $PRIVATE_IP..."
+# ========== STEP 0: CHECK & START CLOUD PRIVATE (RUNNING LOCALLY) ==========
+write_info "🔒 STEP 0: Checking & Starting Database (Local)..."
 
 DB_CONTAINER="mysql"
-MYSQL_STATUS=$(ssh -o StrictHostKeyChecking=no "$PRIVATE_USER@$PRIVATE_IP" "docker ps -a --filter 'name=^${DB_CONTAINER}$' --format '{{.State}}'")
-
-if [ $? -ne 0 ]; then
-    write_error "Error connecting to Cloud Private ($PRIVATE_IP)"
-    write_error "   - Check if VMware machine has OpenVPN running"
-    exit 1
-fi
-
+# Chạy thẳng lệnh docker locally
+MYSQL_STATUS=$(docker ps -a --filter "name=^${DB_CONTAINER}$" --format "{{.State}}")
 MYSQL_STATUS=$(echo "$MYSQL_STATUS" | xargs)
 
 if [ "$MYSQL_STATUS" == "running" ]; then
-    write_success "MySQL container is already running."
+    write_success "MySQL container is already running locally."
 elif [ "$MYSQL_STATUS" == "exited" ] || [ "$MYSQL_STATUS" == "created" ]; then
     write_warning "MySQL container exists but is stopped. Starting it..."
-    ssh -o StrictHostKeyChecking=no "$PRIVATE_USER@$PRIVATE_IP" "docker start $DB_CONTAINER 2>&1"
+    docker start $DB_CONTAINER 2>&1
     if [ $? -ne 0 ]; then
         write_error "Error starting MySQL container"
         exit 1
@@ -82,43 +71,35 @@ elif [ "$MYSQL_STATUS" == "exited" ] || [ "$MYSQL_STATUS" == "created" ]; then
     sleep 3
 else
     write_warning "MySQL container does not exist. Preparing to create..."
-    write_info "Checking for docker-compose-mysql.yml on Cloud Private..."
-    ssh -o StrictHostKeyChecking=no "$PRIVATE_USER@$PRIVATE_IP" "test -f ~/docker-compose-mysql.yml"
     
-    if [ $? -ne 0 ]; then
-        write_warning "docker-compose-mysql.yml not found, uploading..."
-        cd "$ROOT_DIR" || exit
-        scp -o StrictHostKeyChecking=no docker-compose-mysql.yml "$PRIVATE_USER@$PRIVATE_IP:~/"
-        if [ $? -ne 0 ]; then
-            write_error "Error uploading docker-compose-mysql.yml to Cloud Private"
-            exit 1
-        fi
-        write_success "docker-compose-mysql.yml uploaded successfully"
-    else
-        write_info "docker-compose-mysql.yml already exists"
+    if [ ! -f "$ROOT_DIR/docker-compose-mysql.yml" ]; then
+        write_error "Không tìm thấy file docker-compose-mysql.yml tại $ROOT_DIR"
+        exit 1
     fi
 
     write_info "System will start MySQL container from compose file..."
-    ssh -o StrictHostKeyChecking=no "$PRIVATE_USER@$PRIVATE_IP" "cd ~/ && docker compose -f docker-compose-mysql.yml up -d 2>&1"
+    cd "$ROOT_DIR" || exit
+    docker compose -f docker-compose-mysql.yml up -d 2>&1
     if [ $? -ne 0 ]; then
         write_error "Error creating/starting MySQL container"
         exit 1
     fi
 
-    write_info "Auto-granting MySQL privileges to VPN subnet..."
-    ssh -o StrictHostKeyChecking=no "$PRIVATE_USER@$PRIVATE_IP" "docker exec mysql mysql -u root -p1 -e \"GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION; FLUSH PRIVILEGES;\""
+    write_info "Waiting for MySQL to initialize (15s)..."
+    sleep 15
+    
+    write_info "Auto-granting MySQL privileges..."
+    docker exec mysql mysql -u root -p1 -e "CREATE USER IF NOT EXISTS 'root'@'%'; ALTER USER 'root'@'%' IDENTIFIED BY '1'; GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION; FLUSH PRIVILEGES;"
     if [ $? -eq 0 ]; then
         write_success "MySQL privileges granted!"
     else
         write_warning "Error granting MySQL privileges."
     fi
-
-    write_success "MySQL container created and started!"
-    sleep 5
+    sleep 2
 fi
 
 write_info "Checking MySQL connection..."
-ssh -o StrictHostKeyChecking=no "$PRIVATE_USER@$PRIVATE_IP" "ss -tulpn | grep 3306" > /dev/null
+ss -tulpn | grep 3306 > /dev/null
 if [ $? -eq 0 ]; then
     write_success "MySQL listening on port 3306"
 else
@@ -190,20 +171,20 @@ write_info "🚀 STEP 3: Uploading to Azure via tar.gz archive..."
 cd "$ROOT_DIR" || exit
 
 write_info "📦 Compressing files into BTL.tar.gz..."
-tar -czvf BTL.tar.gz FrontEnd/build FrontEnd/nginx.conf FrontEnd/Dockerfile BackEnd/target/*.jar BackEnd/Dockerfile docker-compose.yml
+tar -czvf BTL.tar.gz FrontEnd/build FrontEnd/nginx.conf FrontEnd/Dockerfile BackEnd/target/*.jar BackEnd/Dockerfile docker-compose.yml > /dev/null 2>&1
 if [ $? -ne 0 ]; then
     write_error "Error compressing files"
     exit 1
 fi
 
-write_info "📤 Uploading BTL.tar.gz to Azure..."
+write_info "📤 Uploading BTL.tar.gz to Azure (MỜI BẠN NHẬP MẬT KHẨU AZURE)..."
 scp -o StrictHostKeyChecking=no BTL.tar.gz "$AZURE_USER@$AZURE_IP:~/"
 if [ $? -ne 0 ]; then
     write_error "Error uploading BTL.tar.gz"
     exit 1
 fi
 
-write_info "📂 Extracting files on Azure..."
+write_info "📂 Extracting files on Azure (MỜI BẠN NHẬP MẬT KHẨU LẦN 2)..."
 ssh -o StrictHostKeyChecking=no "$AZURE_USER@$AZURE_IP" "mkdir -p ~/BTL && tar -xzvf ~/BTL.tar.gz -C ~/BTL && rm ~/BTL.tar.gz"
 if [ $? -ne 0 ]; then
     write_error "Error extracting files on Azure"
@@ -219,7 +200,8 @@ echo ""
 # ========== STEP 4: START DOCKER COMPOSE ==========
 write_info "🐳 STEP 4: Starting Docker Compose on Azure..."
 
-ssh -o StrictHostKeyChecking=no "$AZURE_USER@$AZURE_IP" "cd ~/BTL && docker compose up -d"
+write_info "(MỜI BẠN NHẬP MẬT KHẨU LẦN 3 ĐỂ KHỞI ĐỘNG DOCKER)..."
+ssh -o StrictHostKeyChecking=no "$AZURE_USER@$AZURE_IP" "cd ~/BTL && docker compose up -d --build"
 if [ $? -ne 0 ]; then
     write_error "Error: Failed to start Docker Compose"
     exit 1
@@ -232,9 +214,9 @@ write_info "========================================"
 write_success "DEPLOYMENT COMPLETED SUCCESSFULLY!"
 write_info "========================================"
 echo ""
-write_info "🔒 Cloud Private (VMware - Database):"
-write_info "   - IP: $PRIVATE_IP"
-write_info "   - MySQL: 10.8.0.2:3306"
+write_info "🔒 Cloud Private (Local VMware - Database):"
+write_info "   - Location: Localhost"
+write_info "   - MySQL Port: 3306"
 echo ""
 write_info "☁️  Cloud Public (Azure - Web):"
 write_info "   - Website:      http://$AZURE_IP"
