@@ -808,7 +808,7 @@ scrape_configs:
 
 ### Cách vận hành (Chỉ tốn 3 phút)
 1. Trên máy Azure, chạy lệnh: `docker compose up -d`.
-2. Mở trình duyệt, truy cập vào `http://104.211.91.89:3000` (Grafana). Đăng nhập bằng `admin` / `admin`.
+2. Mở trình duyệt, truy cập vào `http://20.235.122.97:3000` (Grafana). Đăng nhập bằng `admin` / `admin`.
 3. Thêm Prometheus làm Data Source:
    3.1. `Connections` ➔ Chọn `Data sources`
    3.2. `Add data source` ➔ Chọn `Prometheus`
