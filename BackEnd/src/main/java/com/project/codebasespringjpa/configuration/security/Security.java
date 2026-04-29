@@ -93,6 +93,7 @@ public class Security {
         http.authorizeHttpRequests(auth -> auth
                 // Public endpoints - không cần authentication
                 .requestMatchers(SWAGGER_WHITELIST).permitAll()
+                .requestMatchers("/actuator/**").permitAll()
                 // Tất cả endpoints khác cần authentication
                 .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex

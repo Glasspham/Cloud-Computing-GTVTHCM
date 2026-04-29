@@ -13,14 +13,14 @@ import java.util.List;
 
 @Repository
 public interface IUserRepository extends JpaRepository<UserEntity, Long> {
-    @EntityGraph(attributePaths = { "role", "majors" })
+    @EntityGraph(attributePaths = { "role" })
     Optional<UserEntity> findByUsername(String username);
 
     @Override
     @EntityGraph(attributePaths = { "role", "majors" })
     Optional<UserEntity> findById(Long id);
 
-    @EntityGraph(attributePaths = { "role", "majors" })
+    @EntityGraph(attributePaths = { "role" })
     @Query("""
             select us from UserEntity us where us.isDelete = false
                 and (:keyword is null or us.username like concat('%', :keyword, '%') or us.fullname like concat('%', :keyword, '%'))
@@ -33,14 +33,14 @@ public interface IUserRepository extends JpaRepository<UserEntity, Long> {
             @Param("major") String major,
             Pageable pageable);
 
-    @EntityGraph(attributePaths = { "role", "majors" })
+    @EntityGraph(attributePaths = { "role" })
     @Query("""
                 select us from UserEntity us where us.isDelete = false
                 and us.role.name = 'SPECIALIST'
             """)
     List<UserEntity> findAllSpecialiest();
 
-    @EntityGraph(attributePaths = { "role", "majors" })
+    @EntityGraph(attributePaths = { "role" })
     @Query("""
                 select us from UserEntity us where us.isDelete = false
                 and us.role.name = 'USER'

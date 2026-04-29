@@ -31,6 +31,6 @@ public class ProgramEntity extends BaseEntity {
     String description;
 
     @ManyToMany(mappedBy = "programs")
-    @BatchSize(size = 32)
+    @BatchSize(size = 50)
     List<UserEntity> users;
 }

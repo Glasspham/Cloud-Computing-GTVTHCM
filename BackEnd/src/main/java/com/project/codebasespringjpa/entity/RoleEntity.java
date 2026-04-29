@@ -3,6 +3,7 @@ package com.project.codebasespringjpa.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.BatchSize;
 import java.util.List;
 
 @Data
@@ -20,6 +21,7 @@ public class RoleEntity {
     String description;
 
     @OneToMany(mappedBy = "role")
+    @BatchSize(size = 50)
     List<UserEntity> users;
 
     public RoleEntity(String name) {

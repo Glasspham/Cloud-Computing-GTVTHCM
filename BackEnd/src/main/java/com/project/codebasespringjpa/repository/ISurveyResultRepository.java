@@ -10,7 +10,10 @@ import java.util.List;
 @Repository
 public interface ISurveyResultRepository extends JpaRepository<SurveyResultEntity, Long> {
     @Query("""
-            select sr from SurveyResultEntity sr where sr.survey.isDelete = false and sr.user.username = :username
+            select sr from SurveyResultEntity sr 
+            join fetch sr.survey 
+            join fetch sr.user 
+            where sr.survey.isDelete = false and sr.user.username = :username
             and (:surveyId is null or sr.survey.id = :surveyId)
             """)
     List<SurveyResultEntity> findAll(@Param("username") String username,

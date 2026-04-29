@@ -22,10 +22,10 @@ public class SurveyEntity extends BaseEntity{
     String type;
 
     @OneToMany(mappedBy = "survey", cascade = CascadeType.ALL, orphanRemoval = true)
-    @BatchSize(size = 32)
+    @BatchSize(size = 50)
     List<QuestionEntity> questions;
 
     @OneToMany(mappedBy = "survey")
-    @BatchSize(size = 32)
+    @BatchSize(size = 50)
     List<SurveyResultEntity> surveyResult;
 }

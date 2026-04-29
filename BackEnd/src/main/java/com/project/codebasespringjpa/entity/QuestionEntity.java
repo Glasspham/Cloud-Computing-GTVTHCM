@@ -25,6 +25,6 @@ public class QuestionEntity extends BaseEntity {
     SurveyEntity survey;
 
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
-    @BatchSize(size = 32)
+    @BatchSize(size = 50)
     List<AnswerEntity> answers;
 }

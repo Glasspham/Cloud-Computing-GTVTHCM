@@ -29,11 +29,11 @@ public class CourseEntity extends BaseEntity {
     Double duration;
 
     @ManyToMany
-    @BatchSize(size = 32)
+    @BatchSize(size = 50)
     @JoinTable(name = "tbl_course_object", joinColumns = @JoinColumn(name = "course_id"), inverseJoinColumns = @JoinColumn(name = "object_id"))
     List<ObjectEntity> objects;
 
     @OneToMany(mappedBy = "course")
-    @BatchSize(size = 32)
+    @BatchSize(size = 50)
     List<CourseDetailEntity> courseDetail;
 }
