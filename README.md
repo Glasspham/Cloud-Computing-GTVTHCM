@@ -804,6 +804,11 @@ scrape_configs:
   - job_name: 'cadvisor'
     static_configs:
       - targets: ['cadvisor:8080'] # Theo dõi Docker
+
+  - job_name: 'spring-backend'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['backend:8080'] # Chỉ thẳng vào tên container backend
 ```
 
 ### Cách vận hành (Chỉ tốn 3 phút)
@@ -828,4 +833,31 @@ scrape_configs:
    4.4. Kéo tuột xuống dưới cùng `DS_PROMETHEUS`, chọn Data Source là `Prometheus`
    4.5. Bấm `Import`
 
+   _Tạo Dashboard theo dõi chi tiết Spring-boost (Backend)._
+   4.1. `Dashboards` ➔ Chọn `Import` (Góc bên phải ở trên cùng)
+   4.2. Nhập `4701` vào ô `Import via grafana.com`
+   4.3. Bấm `Load`
+   4.4. Kéo tuột xuống dưới cùng `DS_PROMETHEUS`, chọn Data Source là `Prometheus`
+   4.5. Bấm `Import`
+
 Vậy là xong! Lúc đi bảo vệ, bạn chỉ cần mở cái trang Grafana này lên, chĩa thẳng vào biểu đồ băng thông (Network Traffic) của card `tun0` và tự tin tuyên bố: *"Hệ thống của em đang hoạt động cực kỳ mượt mà qua đường hầm VPN xuyên quốc gia!"*.
+
+
+#### DS_PROMETHEUS was not found
+
+Lỗi này ở 2 dashboard `JVM (Micrometer)` và `Node Exporter Full` thì cách khắc phụ như sau:
+
+Bước 1: Nhìn qua gốc trên bên phải nhấn vào `Edit`
+
+Bước 2: Nhấn vào `dashboard options` ⚙️
+
+Bước 3: Kéo xuống dưới chọn mục `Variables`
+
+Bước 4: Tìm mục `DS_PROMETHEUS` hoặc chưa có thì nhấn vào nút `Add variable` để thêm mới
+    Nếu chọn `Add variable` thì hiện ra 1 cửa sổ chọn `Data Source`
+
+Bước 5: `Name` ghi là `DS_PROMETHEUS`
+
+Bước 6: `Type` chọn `Prometheus`
+
+Bước 7: Bấm vào nút `Save`
