@@ -714,7 +714,7 @@ scp -r ./docker-compose.yml glass@20.235.122.97:~/BTL
 ```bash
 tar -czvf BTL.tar.gz FrontEnd/build FrontEnd/nginx.conf FrontEnd/Dockerfile BackEnd/target/*.jar BackEnd/Dockerfile docker-compose.yml
 scp BTL.tar.gz glass@[IP]:~/
-ssh glass@[IP] "mkdir -p ~/BTL && tar -xzvf BTL.tar.gz -C ~/BTL"
+ssh glass@[IP] "mkdir -p ~/BTL && tar -xzvf BTL.tar.gz -C ~/BTL && rm BTL.tar.gz"
 Remove-Item -Path .\BTL.tar.gz
 ```
 
@@ -722,7 +722,7 @@ _Ví dụ:_
 ```bash
 tar -czvf BTL.tar.gz FrontEnd/build FrontEnd/nginx.conf FrontEnd/Dockerfile BackEnd/target/*.jar BackEnd/Dockerfile docker-compose.yml
 scp BTL.tar.gz glass@20.235.122.97:~/
-ssh glass@20.235.122.97 "mkdir -p ~/BTL && tar -xzvf BTL.tar.gz -C ~/BTL"
+ssh glass@20.235.122.97 "mkdir -p ~/BTL && tar -xzvf BTL.tar.gz -C ~/BTL && rm BTL.tar.gz"
 Remove-Item -Path .\BTL.tar.gz
 ```
 
@@ -855,8 +855,33 @@ scrape_configs:
 ```
 
 ### Cách vận hành (Chỉ tốn 3 phút)
+
+#### Tính bảo mật của hệ thống
+
+Do tính bảo mật hệ thống phải để trên cao nhất nên không thể nào cấp inbound cho phần grafana và prometheus được. Để truy cập hệ thống giám sát chúng ta sẽ có:
+
+**🛤️ Con đường 1: Vẫn dùng SSH Tunnel nhưng "tự động hóa" nó (Khuyên dùng cho Đồ án)**
+Cách này giữ được độ bảo mật 10/10 mà lại cực kỳ nhàn. Bạn không cần lần nào cũng phải gõ lại cái lệnh dài ngoằng kia đâu.
+* **Cách làm:** Bạn tạo một file tên là `Mo_Monitoring.bat` ngay trên màn hình Desktop của máy Windows. Chuột phải chọn Edit và dán dòng lệnh này vào:
+  ```bat
+  ssh -L 3000:localhost:3000 -L 9090:localhost:9090 user@20.235.122.97
+  ```
+* **Từ nay về sau:** Mỗi lần muốn xem Grafana, bạn chỉ cần **Click đúp** vào file `.bat` này, nó tự động mở cửa sổ đen lên và tạo đường hầm. Bạn xem xong thì X cái cửa sổ đó đi là xong. Nhanh gọn, nguy hiểm, và rất "Hacker"!
+
+**🛤️ Con đường 2: Dùng mạng VPN (Cách Doanh nghiệp hay dùng)**
+Hệ thống của bạn vốn dĩ đã có 1 cái server OpenVPN (để nối Azure với VMware) rồi mà! 
+* **Cách làm:** Bạn chỉ cần tải phần mềm **OpenVPN Connect** cài lên cái máy tính Windows bạn đang ngồi. Sau đó lấy file cấu hình `.ovpn` ném vào. 
+* **Từ nay về sau:** Khi nào cần giám sát, bạn bật app OpenVPN lên và ấn Connect. Lúc này máy tính của bạn đã nằm trong mạng nội bộ. Bạn mở trình duyệt gõ thẳng IP nội bộ: `[http://10.8.0.1:3000](http://10.8.0.1:3000)` là vào được Grafana. Tắt app VPN đi thì lại bị chặn.
+
+**🛤️ Con đường 3: Mở lại cổng nhưng thêm "Bảo vệ 2 lớp" (Cách Tiện lợi nhất)**
+Nếu bạn vẫn thích gõ tên miền/IP Public trên trình duyệt web cho tiện (đi qua Nginx cổng 80), bạn BẮT BUỘC phải làm thêm bước xác thực.
+* **Cách làm:** Bạn đưa Grafana và Prometheus vào file cấu hình của Nginx (ví dụ cấu hình đường dẫn `/monitor/grafana`), nhưng phải cài thêm tính năng **Nginx HTTP Basic Auth**. 
+* **Từ nay về sau:** Khi gõ link trên web, trình duyệt sẽ văng ra một cái bảng bắt nhập User/Password cấp độ máy chủ (trước khi kịp nhìn thấy mặt mũi Nginx hay Grafana). Nhập đúng thì mới cho đi tiếp.
+
+#### Thiết lập kết nối Grafana
+
 1. Trên máy Azure, chạy lệnh: `docker compose up -d`.
-2. Mở trình duyệt, truy cập vào `http://20.235.122.97:3000` (Grafana). Đăng nhập bằng `admin` / `admin`.
+2. Mở trình duyệt, truy cập vào `http://localhost:3000` (Grafana). Đăng nhập bằng `admin` / `admin`. **(Chọn SSH Tunnel)**
 3. Thêm Prometheus làm Data Source:
    3.1. `Connections` ➔ Chọn `Data sources`
    3.2. `Add data source` ➔ Chọn `Prometheus`
@@ -885,7 +910,6 @@ scrape_configs:
 
 Vậy là xong! Lúc đi bảo vệ, bạn chỉ cần mở cái trang Grafana này lên, chĩa thẳng vào biểu đồ băng thông (Network Traffic) của card `tun0` và tự tin tuyên bố: *"Hệ thống của em đang hoạt động cực kỳ mượt mà qua đường hầm VPN xuyên quốc gia!"*.
 
-
 #### DS_PROMETHEUS was not found
 
 Lỗi này ở 2 dashboard `JVM (Micrometer)` và `Node Exporter Full` thì cách khắc phụ như sau:
@@ -904,3 +928,118 @@ Bước 5: `Name` ghi là `DS_PROMETHEUS`
 Bước 6: `Type` chọn `Prometheus`
 
 Bước 7: Bấm vào nút `Save`
+
+#### Sự cô lập mạng nội bộ (Docker Network Isolation)
+
+Thủ phạm khiến Grafana vẫn báo `N/A` không nằm ở code của bạn, mà nằm ở một **"Bức tường tàng hình"** của Docker mà dân DevOps nào mới vào nghề cũng từng bị đập đầu vào: **Sự cô lập mạng nội bộ (Docker Network Isolation)**.
+
+Vì đang làm việc ở 2 thư mục khác nhau:
+1. Thư mục **`~/BTL`**: Nơi bạn chạy lệnh khởi động `backend` và `frontend`.
+2. Thư mục **`~/monitoring`**: Nơi bạn chạy lệnh khởi động `prometheus` và `grafana`.
+
+**Luật của Docker Compose:** Mỗi khi bạn chạy `docker compose up` ở một thư mục, nó sẽ tạo ra một mạng LAN ảo riêng biệt cho thư mục đó (Ví dụ: mạng `btl_default` và mạng `monitoring_default`). 
+👉 Hậu quả: Thằng `prometheus` đứng ở mạng bên này, gào tên thằng `backend:8080` ở mạng bên kia. Tất nhiên là nó không tìm thấy (lỗi *No such host*), nên nó không kéo được dữ liệu về!
+
+*(Bạn có thể tự kiểm chứng bằng cách mở trình duyệt gõ: `http://20.235.122.97:9090/targets`. Đảm bảo cái mục `spring-backend` đang bị báo màu đỏ lòm **DOWN**).*
+
+**🪄 Giải pháp: "Khoét tường" thông mạng (Chỉ mất 5 giây)**
+
+Tại cửa sổ Terminal trên Azure, bạn gõ **đúng 2 lệnh này**:
+
+**Lệnh 1: Tìm tên mạng lưới của Backend**
+```bash
+docker network ls
+```
+*(Bạn nhìn vào cột NAME, sẽ thấy một cái tên giống như `btl_default` hoặc `btl-default`. Hãy nhớ cái tên này).*
+
+**Lệnh 2: Ép Prometheus chui vào mạng của Backend**
+Giả sử tên mạng bạn vừa thấy là `btl_default`, bạn gõ lệnh sau:
+```bash
+docker network connect btl_default prometheus
+```
+*(Lệnh này có nghĩa là: Nối mạng `btl_default` vào cho container có tên là `prometheus`).*
+
+**💡 Nâng cấp cho tương lai (Để không bị mất mạng khi khởi động lại server)**
+
+Cách gõ lệnh trên là cách "cấp cứu" tức thời. Để hệ thống tự động thông mạng mỗi khi khởi động lại, bạn hãy mở file `~/monitoring/docker-compose.yml` ra và cấu hình ép mạng như sau:
+
+```yaml
+services:
+  prometheus:
+    image: prom/prometheus
+    # ... (các cấu hình khác giữ nguyên)
+    networks:
+      - default
+      - btl_default  # Thêm dòng này để xin vào mạng BTL
+
+# Khai báo mạng ở cuối file
+networks:
+  btl_default:
+    external: true   # Nói với Docker là "mạng này có sẵn rồi, đừng tạo mới"
+```
+
+## Test khả năng chịu tải
+
+Chúng ta sẽ dùng công nghệ k6 của Grafana để test khả năng chịu tải của hệ thống và xem sự thay đổi của các bảng số liệu.
+
+*Bước 1:* Trước tiên phải cài `k6` cài về máy tính của mình. Có thể cài bằng cách tải file .exe về máy hoặc dùng lệnh: 
+
+```bash
+# chocolatey
+choco install k6
+# winget
+winget install GrafanaLabs.k6
+# scoop
+scoop install k6
+```
+
+*Bước 2:* Tạo file test
+
+Tạo file `test_load.js` để giả lập 100 người cùng truy cập website trong vòng 30s. _(Hoặc sử dụng file test có sẵn)_
+
+```bash
+# Tạo file kịch bản test (Dùng lệnh cat để ghi nội dung)
+cat > test_load.js <<EOF
+import http from 'k6/http';
+import { sleep, check } from 'k6';
+
+export const options = {
+    // Cấu hình: 100 users, chạy trong 30 giây
+    vus: 100, 
+    duration: '30s',
+    
+    // Cấu hình ngưỡng an toàn (Thresholds)
+    thresholds: {
+        // 95% yêu cầu phải dưới 400ms
+        'http_req_duration': ['p(95)<400'], 
+        // Tỷ lệ lỗi không được vượt quá 1%
+        'http_req_failed': ['rate<0.01'],
+    },
+};
+
+export default function () {
+    // Địa chỉ IP Public của VPS
+    const res = http.get('http://20.235.122.97/'); 
+    
+    // Kiểm tra xem có lỗi không
+    check(res, {
+        'is status 200': (r) => r.status === 200,
+    });
+    
+    sleep(1); // Nghỉ 1 giây giữa các lần request để giả lập người thật
+}
+EOF
+```
+
+*Bước 3:* Chạy lệnh test và quan sát kết quả
+
+```bash
+k6 run test_load.js
+```
+
+*Bước 4:* Sau khi chạy xong, k6 sẽ hiển thị cho bạn một bảng thống kê kết quả, trong đó quan trọng nhất là:
+
+* `http_req_duration`: Thời gian phản hồi trung bình của hệ thống.
+* `http_req_failed`: Tỷ lệ request bị lỗi.
+
+Nếu các chỉ số này nằm trong ngưỡng an toàn mà bạn đã cài đặt ở bước 2, thì chúc mừng! Hệ thống của bạn đã vượt qua bài kiểm tra chịu tải.
